@@ -17,7 +17,7 @@ include(FetchContent)
 FetchContent_Declare(
   MathematicalGroupsCPP
   GIT_REPOSITORY https://github.com/uofl-cse-310/MathematicalGroups-CPP
-  GIT_TAG v1.0.0
+  GIT_TAG v1.1.0
 )
 FetchContent_MakeAvailable(MathematicalGroupsCPP)
 
