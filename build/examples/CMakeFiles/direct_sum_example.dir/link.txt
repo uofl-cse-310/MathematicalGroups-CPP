@@ -1,1 +1,0 @@
-/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/direct_sum_example.dir/direct_sum_example.cpp.o -o direct_sum_example

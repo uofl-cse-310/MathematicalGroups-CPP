@@ -1,3 +1,0 @@
-MathGroup.CanSetOrderElementsAndOperation 2 0.00262181
-DirectSum.HasOrderProductAndOperatesComponentwise 2 0.00200069
----

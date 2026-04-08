@@ -1,5 +1,0 @@
-add_test([=[MathGroup.CanSetOrderElementsAndOperation]=]  /Volumes/DockDrive/github/teaching/cse-310/MathematicalGroups-CPP/build/testing/MathematicalGroupsTests [==[--gtest_filter=MathGroup.CanSetOrderElementsAndOperation]==] --gtest_also_run_disabled_tests)
-set_tests_properties([=[MathGroup.CanSetOrderElementsAndOperation]=]  PROPERTIES WORKING_DIRECTORY /Volumes/DockDrive/github/teaching/cse-310/MathematicalGroups-CPP/build/testing SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-add_test([=[DirectSum.HasOrderProductAndOperatesComponentwise]=]  /Volumes/DockDrive/github/teaching/cse-310/MathematicalGroups-CPP/build/testing/MathematicalGroupsTests [==[--gtest_filter=DirectSum.HasOrderProductAndOperatesComponentwise]==] --gtest_also_run_disabled_tests)
-set_tests_properties([=[DirectSum.HasOrderProductAndOperatesComponentwise]=]  PROPERTIES WORKING_DIRECTORY /Volumes/DockDrive/github/teaching/cse-310/MathematicalGroups-CPP/build/testing SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-set(  MathematicalGroupsTests_TESTS MathGroup.CanSetOrderElementsAndOperation DirectSum.HasOrderProductAndOperatesComponentwise)
