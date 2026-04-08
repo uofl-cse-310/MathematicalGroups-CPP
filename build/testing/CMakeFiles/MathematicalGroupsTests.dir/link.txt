@@ -1,0 +1,1 @@
+/usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/MathematicalGroupsTests.dir/MathGroupTests.cpp.o CMakeFiles/MathematicalGroupsTests.dir/DirectSumTests.cpp.o -o MathematicalGroupsTests  ../lib/libgtest_main.a ../lib/libgtest.a

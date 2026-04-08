@@ -1,0 +1,5 @@
+if(EXISTS "/Volumes/DockDrive/github/teaching/cse-310/MathematicalGroups-CPP/build/testing/MathematicalGroupsTests[1]_tests.cmake")
+  include("/Volumes/DockDrive/github/teaching/cse-310/MathematicalGroups-CPP/build/testing/MathematicalGroupsTests[1]_tests.cmake")
+else()
+  add_test(MathematicalGroupsTests_NOT_BUILT MathematicalGroupsTests_NOT_BUILT)
+endif()
