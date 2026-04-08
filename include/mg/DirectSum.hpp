@@ -92,11 +92,8 @@ private:
   }
 };
 
-template <GroupConcept G1, GroupConcept G2>
-DirectSum<G1, G2> operator+(const G1& g1, const G2& g2) {
-  return DirectSum<G1, G2>(g1, g2);
-}
-
 } // namespace mg
+
+#include <mg/DirectSumPlus.hpp>
 
 #endif // MG_DIRECT_SUM_HPP

@@ -4,5 +4,6 @@
 #include <mg/GroupElementConcept.hpp>
 #include <mg/MathGroup.hpp>
 #include <mg/DirectSum.hpp>
+#include <mg/DirectSumPlus.hpp>
 
 #endif // MG_MG_HPP
