@@ -31,15 +31,13 @@ TEST(DirectSum, HasOrderProductAndOperatesComponentwise) {
   auto ds = g1 + g2;
   EXPECT_EQ(ds.order(), 4u);
 
-  auto* x = ds.element(0); // (0,0)
-  auto* y = ds.element(3); // (1,1)
+  auto* x = ds.element(0);
+  auto* y = ds.element(3);
 
   auto* s = ds.operate(x, y);
 
-  // (0,0) + (1,1) = (1,1)
   EXPECT_EQ(s->first, &b);
   EXPECT_EQ(s->second, &d);
 }
 
-} // namespace
-
+}

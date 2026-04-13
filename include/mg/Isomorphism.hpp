@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <mg/GroupConcept.hpp>
+#include <mg/GroupValidation.hpp>
 
 namespace mg {
 
@@ -84,13 +85,14 @@ inline bool sameMultiset(std::vector<std::size_t> a, std::vector<std::size_t> b)
 
 } // namespace detail
 
-// Returns true iff there exists a bijective homomorphism A -> B.
-// Works for any two group container types modeling mg::GroupConcept.
 template <GroupConcept GA, GroupConcept GB>
 bool isIsomorphicTo(const GA& A, const GB& B) {
   const auto n = A.order();
   if (n != B.order()) return false;
   if (n == 0) return true;
+
+  requireGroupAxioms(A);
+  requireGroupAxioms(B);
 
   const auto idA = detail::findIdentityIndex(A);
   const auto idB = detail::findIdentityIndex(B);
@@ -99,11 +101,9 @@ bool isIsomorphicTo(const GA& A, const GB& B) {
   const auto ordB = detail::elementOrders(B, idB);
   if (!detail::sameMultiset(ordA, ordB)) return false;
 
-  // Precompute multiplication tables in index form.
   std::vector<std::vector<std::size_t>> mulA(n, std::vector<std::size_t>(n, 0));
   std::vector<std::vector<std::size_t>> mulB(n, std::vector<std::size_t>(n, 0));
 
-  // pointer->index maps via linear scan (n is expected to be small; keeps GroupConcept minimal).
   auto idxInA = [&](typename GA::pointer p) -> std::size_t {
     for (std::size_t i = 0; i < n; ++i)
       if (A.element(i) == p) return i;
@@ -122,7 +122,6 @@ bool isIsomorphicTo(const GA& A, const GB& B) {
     }
   }
 
-  // Candidates by element order (a necessary condition for isomorphism).
   std::vector<std::vector<std::size_t>> candidates(n);
   for (std::size_t i = 0; i < n; ++i) {
     candidates[i].reserve(n);
@@ -132,26 +131,21 @@ bool isIsomorphicTo(const GA& A, const GB& B) {
     if (candidates[i].empty()) return false;
   }
 
-  // Identity must map to identity.
   if (std::find(candidates[idA].begin(), candidates[idA].end(), idB) == candidates[idA].end())
     return false;
 
-  // mapAtoB[i] = j, mapBtoA[j] = i
   std::vector<std::size_t> mapAtoB(n, detail::kUnassigned);
   std::vector<std::size_t> mapBtoA(n, detail::kUnassigned);
 
-  // --- constraint propagation ---
   struct Assignment {
     std::size_t a;
     std::size_t b;
   };
 
   auto pushAssign = [&](std::size_t a, std::size_t b, std::vector<Assignment>& trail) -> bool {
-    // Respect existing assignment and injectivity.
     if (mapAtoB[a] != detail::kUnassigned) return mapAtoB[a] == b;
     if (mapBtoA[b] != detail::kUnassigned) return false;
 
-    // Respect candidate restriction.
     if (std::find(candidates[a].begin(), candidates[a].end(), b) == candidates[a].end())
       return false;
 
@@ -168,8 +162,6 @@ bool isIsomorphicTo(const GA& A, const GB& B) {
     }
   };
 
-  // Propagate consequences of all current assignments until fixpoint.
-  // For any assigned x,y we require f(x*y)=f(x)*f(y) and f(y*x)=f(y)*f(x).
   auto propagate = [&](std::vector<Assignment>& trail) -> bool {
     bool changed = true;
     while (changed) {
@@ -183,7 +175,6 @@ bool isIsomorphicTo(const GA& A, const GB& B) {
           const auto fy = mapAtoB[y];
           if (fy == detail::kUnassigned) continue;
 
-          // z = x*y in A must map to fz = fx*fy in B.
           {
             const auto z = mulA[x][y];
             const auto fz = mulB[fx][fy];
@@ -192,7 +183,6 @@ bool isIsomorphicTo(const GA& A, const GB& B) {
             if (before == detail::kUnassigned) changed = true;
           }
 
-          // z = y*x in A must map to fz = fy*fx in B.
           {
             const auto z = mulA[y][x];
             const auto fz = mulB[fy][fx];
@@ -207,15 +197,12 @@ bool isIsomorphicTo(const GA& A, const GB& B) {
     return true;
   };
 
-  // Seed identity mapping and propagate.
   {
     std::vector<Assignment> trail;
     if (!pushAssign(idA, idB, trail)) return false;
     if (!propagate(trail)) return false;
-    // keep trail effects (do not undo)
   }
 
-  // Choose next unassigned variable with smallest remaining domain.
   auto pickNextA = [&]() -> std::size_t {
     std::size_t best = detail::kUnassigned;
     std::size_t bestCount = std::numeric_limits<std::size_t>::max();
@@ -240,9 +227,8 @@ bool isIsomorphicTo(const GA& A, const GB& B) {
 
   std::function<bool()> dfs = [&]() -> bool {
     const auto nextA = pickNextA();
-    if (nextA == detail::kUnassigned) return true; // all assigned
+    if (nextA == detail::kUnassigned) return true;
 
-    // Try remaining candidates.
     for (const auto b : candidates[nextA]) {
       if (mapBtoA[b] != detail::kUnassigned) continue;
 
@@ -264,18 +250,6 @@ bool isIsomorphicTo(const GA& A, const GB& B) {
   };
 
   return dfs();
-}
-
-// Cross-type equality for any two group containers.
-// (This is intentionally not constrained to same type.)
-template <GroupConcept GA, GroupConcept GB>
-bool operator==(const GA& a, const GB& b) {
-  return isIsomorphicTo(a, b);
-}
-
-template <GroupConcept GA, GroupConcept GB>
-bool operator!=(const GA& a, const GB& b) {
-  return !isIsomorphicTo(a, b);
 }
 
 } // namespace mg

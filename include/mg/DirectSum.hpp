@@ -10,6 +10,7 @@
 #include <vector>
 
 #include <mg/GroupConcept.hpp>
+#include <mg/Isomorphism.hpp>
 
 namespace mg {
 
@@ -58,8 +59,6 @@ public:
 
   ~DirectSum() = default;
 
-  // DirectSum is a lightweight view over two factor groups (held by reference).
-  // Copying is fine and keeps reference semantics.
   DirectSum(const DirectSum&) = default;
   DirectSum& operator=(const DirectSum&) = delete;
 
@@ -77,7 +76,6 @@ private:
   };
   struct KeyHash {
     std::size_t operator()(const Key& k) const noexcept {
-      // pointer hash combine
       const auto h1 = std::hash<const void*>{}(static_cast<const void*>(k.a));
       const auto h2 = std::hash<const void*>{}(static_cast<const void*>(k.b));
       return h1 ^ (h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2));
@@ -108,7 +106,6 @@ private:
       }
     }
 
-    // Build index for fast lookup.
     index_.reserve(elements_.size());
     for (std::size_t i = 0; i < elements_.size(); ++i) {
       index_.emplace(Key{elements_[i]->first, elements_[i]->second}, i);
@@ -125,7 +122,8 @@ private:
         auto* r2 = g2_.operate(x.second, y.second);
         const auto it = index_.find(Key{r1, r2});
         if (it == index_.end())
-          throw std::logic_error("factor operate() returned pointer not present in factor element() list");
+          throw std::logic_error(
+              "factor operate() returned pointer not present in factor element() list");
         opIndex_[i][j] = it->second;
       }
     }

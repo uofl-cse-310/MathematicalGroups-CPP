@@ -11,10 +11,6 @@
 
 namespace mg {
 
-// Runtime-defined finite group.
-//
-// This is a non-owning container -> it stores pointers to externally-managed
-// elements and a pointer-based operation table.
 template <class T>
 class MathGroup {
 public:
@@ -60,20 +56,10 @@ public:
     return it->second;
   }
 
-  // Group isomorphism check (Cayley-table based).
-  // Returns true iff there exists a bijective homomorphism
   template <class Other>
     requires GroupConcept<Other>
   bool isIsomorphicTo(const Other& other) const {
     return mg::isIsomorphicTo(*this, other);
-  }
-
-  friend bool operator==(const MathGroup& a, const MathGroup& b) {
-    return mg::isIsomorphicTo(a, b);
-  }
-
-  friend bool operator!=(const MathGroup& a, const MathGroup& b) {
-    return !mg::isIsomorphicTo(a, b);
   }
 
 private:
@@ -147,7 +133,8 @@ private:
         cur = operate(cur, a);
       }
       if (ord[i] == 0)
-        throw std::logic_error("element order did not reach identity within group order (invalid group)");
+        throw std::logic_error(
+            "element order did not reach identity within group order (invalid group)");
     }
 
     return ord;

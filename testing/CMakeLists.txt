@@ -15,6 +15,7 @@ add_executable(MathematicalGroupsTests
   MathGroupTests.cpp
   DirectSumTests.cpp
   IsomorphismDirectSumRegressionTests.cpp
+  IsomorphismNestedDirectSumTests.cpp
 )
 
 target_link_libraries(MathematicalGroupsTests

@@ -1,10 +1,11 @@
 #include <gtest/gtest.h>
 
+#include <array>
+
 #include <mg/mg.hpp>
 
 namespace {
 
-// Build Z_n as a MathGroup over stable element objects.
 struct E {
   int id = 0;
 };
@@ -47,13 +48,12 @@ TEST(Isomorphism, DirectSumAssociativityLikeStructure_Z6Z6MatchesZ3Z3PlusV4) {
   auto Z2a = makeZn<2>(e2a);
   auto Z2b = makeZn<2>(e2b);
 
-  auto klein4 = Z2a + Z2b;     // V4
-  auto ds33 = Z3a + Z3b;       // Z3 x Z3
-  auto rhs = ds33 + klein4;    // (Z3xZ3) x (Z2xZ2)
-  auto lhs = Z6 + Z6;          // Z6 x Z6
+  auto klein4 = Z2a + Z2b;
+  auto ds33 = Z3a + Z3b;
+  auto rhs = ds33 + klein4;
+  auto lhs = Z6 + Z6;
 
   EXPECT_TRUE(lhs == rhs);
 }
 
-} // namespace
-
+}

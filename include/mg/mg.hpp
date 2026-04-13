@@ -2,9 +2,11 @@
 #define MG_MG_HPP
 #include <mg/GroupConcept.hpp>
 #include <mg/GroupElementConcept.hpp>
+#include <mg/GroupValidation.hpp>
 #include <mg/Isomorphism.hpp>
+#include <mg/GroupIsomorphismEquality.hpp>
 #include <mg/MathGroup.hpp>
 #include <mg/DirectSum.hpp>
 #include <mg/DirectSumPlus.hpp>
 
-#endif // MG_MG_HPP
+#endif

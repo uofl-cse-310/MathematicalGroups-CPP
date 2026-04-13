@@ -39,4 +39,3 @@ int main() {
   std::cout << "(0,0) + (1,1) = (" << s->first->v << "," << s->second->v << ")\n";
   return 0;
 }
-

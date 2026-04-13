@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
-#include <mg/MathGroup.hpp>
+#include <mg/mg.hpp>
+#include <mg/GroupIsomorphismEquality.hpp>
 
 namespace {
 
@@ -18,7 +19,6 @@ TEST(MathGroup, CanSetOrderElementsAndOperation) {
   g.setElement(0, &a);
   g.setElement(1, &b);
 
-  // Cayley table for Z2 under addition
   g.setOperation(&a, &a, &a);
   g.setOperation(&a, &b, &b);
   g.setOperation(&b, &a, &b);
@@ -29,13 +29,12 @@ TEST(MathGroup, CanSetOrderElementsAndOperation) {
 }
 
 struct E {
-  int id = 0; // unique identity for pointer stability
+  int id = 0;
 };
 
 static mg::MathGroup<E> makeZ2(E& e0, E& e1, bool swapped) {
   mg::MathGroup<E> g;
   g.setOrder(2);
-
 
   if (!swapped) {
     g.setElement(0, &e0);
@@ -59,12 +58,11 @@ static mg::MathGroup<E> makeZ2(E& e0, E& e1, bool swapped) {
 static mg::MathGroup<E> makeZ4(E& e0, E& e1, E& e2, E& e3) {
   mg::MathGroup<E> g;
   g.setOrder(4);
-  g.setElement(0, &e0); // 0
-  g.setElement(1, &e1); // 1
-  g.setElement(2, &e2); // 2
-  g.setElement(3, &e3); // 3
+  g.setElement(0, &e0);
+  g.setElement(1, &e1);
+  g.setElement(2, &e2);
+  g.setElement(3, &e3);
 
-  // addition mod 4
   for (std::size_t i = 0; i < 4; ++i) {
     for (std::size_t j = 0; j < 4; ++j) {
       g.setOperation(g.element(i), g.element(j), g.element((i + j) % 4));
@@ -76,29 +74,25 @@ static mg::MathGroup<E> makeZ4(E& e0, E& e1, E& e2, E& e3) {
 static mg::MathGroup<E> makeV4(E& e0, E& eA, E& eB, E& eC) {
   mg::MathGroup<E> g;
   g.setOrder(4);
-  g.setElement(0, &e0); // identity
+  g.setElement(0, &e0);
   g.setElement(1, &eA);
   g.setElement(2, &eB);
   g.setElement(3, &eC);
 
-  // Klein four group: all non-identity elements have order 2.
   auto* e = g.element(0);
   auto* a = g.element(1);
   auto* b = g.element(2);
   auto* c = g.element(3);
 
-  // e acts as identity
   for (auto* x : {e, a, b, c}) {
     g.setOperation(e, x, x);
     g.setOperation(x, e, x);
   }
 
-  // a^2=b^2=c^2=e
   g.setOperation(a, a, e);
   g.setOperation(b, b, e);
   g.setOperation(c, c, e);
 
-  // ab=ba=c, ac=ca=b, bc=cb=a
   g.setOperation(a, b, c);
   g.setOperation(b, a, c);
 
@@ -133,4 +127,4 @@ TEST(MathGroup, EqualityMeansIsomorphic_Z4NotIsomorphicToV4) {
   EXPECT_TRUE(z4 != v4);
 }
 
-} // namespace
+}

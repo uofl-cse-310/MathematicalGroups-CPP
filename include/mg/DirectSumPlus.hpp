@@ -15,4 +15,3 @@ constexpr DirectSum<L, R> operator+(const L& lhs, const R& rhs) {
 } // namespace mg
 
 #endif // MG_DIRECT_SUM_PLUS_HPP
-
