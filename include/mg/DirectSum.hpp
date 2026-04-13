@@ -58,7 +58,9 @@ public:
 
   ~DirectSum() = default;
 
-  DirectSum(const DirectSum&) = delete;
+  // DirectSum is a lightweight view over two factor groups (held by reference).
+  // Copying is fine and keeps reference semantics.
+  DirectSum(const DirectSum&) = default;
   DirectSum& operator=(const DirectSum&) = delete;
 
   DirectSum(DirectSum&&) noexcept = default;
