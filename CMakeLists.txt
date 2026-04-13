@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(MathematicalGroupsCPP VERSION 1.4.0 LANGUAGES CXX)
+project(MathematicalGroupsCPP VERSION 1.5.0 LANGUAGES CXX)
 
 # When used via FetchContent, turn tests/examples OFF by default.
 option(MG_BUILD_TESTING "Build unit tests" ${PROJECT_IS_TOP_LEVEL})
