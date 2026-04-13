@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
+#include <mg/Isomorphism.hpp>
 
 namespace mg {
 
@@ -61,56 +62,18 @@ public:
 
   // Group isomorphism check (Cayley-table based).
   // Returns true iff there exists a bijective homomorphism
-  bool isIsomorphicTo(const MathGroup& other) const {
-    if (order_ != other.order_) return false;
-    if (order_ == 0) return true;
-
-    const auto idA = findIdentityIndex_();
-    const auto idB = other.findIdentityIndex_();
-
-    const auto ordA = elementOrders_(idA);
-    const auto ordB = other.elementOrders_(idB);
-
-    if (!sameMultiset_(ordA, ordB)) return false;
-
-    // Build candidate mapping sets using element orders as an invariant.
-    const std::size_t n = order_;
-    std::vector<std::vector<std::size_t>> candidates(n);
-    for (std::size_t i = 0; i < n; ++i) {
-      for (std::size_t j = 0; j < n; ++j) {
-        if (ordA[i] == ordB[j]) candidates[i].push_back(j);
-      }
-      if (candidates[i].empty()) return false;
-    }
-
-    // Force identity -> identity.
-    if (std::find(candidates[idA].begin(), candidates[idA].end(), idB) == candidates[idA].end())
-      return false;
-
-    std::vector<std::size_t> mapAtoB(n, kUnassigned_);
-    std::vector<std::size_t> mapBtoA(n, kUnassigned_);
-    mapAtoB[idA] = idB;
-    mapBtoA[idB] = idA;
-
-    // Variables (indices) to assign, ordered by least candidates first.
-    std::vector<std::size_t> vars;
-    vars.reserve(n - 1);
-    for (std::size_t i = 0; i < n; ++i)
-      if (i != idA) vars.push_back(i);
-
-    std::sort(vars.begin(), vars.end(), [&](std::size_t x, std::size_t y) {
-      return candidates[x].size() < candidates[y].size();
-    });
-
-    return backtrackIsomorphism_(other, candidates, vars, 0, mapAtoB, mapBtoA);
+  template <class Other>
+    requires GroupConcept<Other>
+  bool isIsomorphicTo(const Other& other) const {
+    return mg::isIsomorphicTo(*this, other);
   }
 
   friend bool operator==(const MathGroup& a, const MathGroup& b) {
-    return a.isIsomorphicTo(b);
+    return mg::isIsomorphicTo(a, b);
   }
 
   friend bool operator!=(const MathGroup& a, const MathGroup& b) {
-    return !a.isIsomorphicTo(b);
+    return !mg::isIsomorphicTo(a, b);
   }
 
 private:
@@ -194,73 +157,6 @@ private:
     std::sort(a.begin(), a.end());
     std::sort(b.begin(), b.end());
     return a == b;
-  }
-
-  // Verify homomorphism constraints implied by already-assigned elements.
-  bool respectsConstraints_(const MathGroup& other,
-                           const std::vector<std::size_t>& mapAtoB,
-                           std::size_t i,
-                           std::size_t jCandidate) const {
-    auto* ai = element(i);
-    auto* bj = other.element(jCandidate);
-
-    for (std::size_t k = 0; k < order_; ++k) {
-      const auto fk = mapAtoB[k];
-      if (fk == kUnassigned_) continue;
-
-      // If f(i*k) is assigned, enforce f(i)*f(k) = f(i*k).
-      {
-        auto* prodA = operate(ai, element(k));
-        const auto ip = index_.at(prodA);
-        const auto fip = mapAtoB[ip];
-        if (fip != kUnassigned_) {
-          auto* want = other.operate(bj, other.element(fk));
-          if (want != other.element(fip)) return false;
-        }
-      }
-
-      // If f(k*i) is assigned, enforce f(k)*f(i) = f(k*i).
-      {
-        auto* prodA = operate(element(k), ai);
-        const auto ip = index_.at(prodA);
-        const auto fip = mapAtoB[ip];
-        if (fip != kUnassigned_) {
-          auto* want = other.operate(other.element(fk), bj);
-          if (want != other.element(fip)) return false;
-        }
-      }
-    }
-
-    return true;
-  }
-
-  bool backtrackIsomorphism_(const MathGroup& other,
-                            const std::vector<std::vector<std::size_t>>& candidates,
-                            const std::vector<std::size_t>& vars,
-                            std::size_t pos,
-                            std::vector<std::size_t>& mapAtoB,
-                            std::vector<std::size_t>& mapBtoA) const {
-    if (pos == vars.size()) {
-      // bijective and constraints were checked incrementally -> isomorphism found.
-      return true;
-    }
-
-    const auto i = vars[pos];
-
-    for (const auto j : candidates[i]) {
-      if (mapBtoA[j] != kUnassigned_) continue;
-      if (!respectsConstraints_(other, mapAtoB, i, j)) continue;
-
-      mapAtoB[i] = j;
-      mapBtoA[j] = i;
-
-      if (backtrackIsomorphism_(other, candidates, vars, pos + 1, mapAtoB, mapBtoA)) return true;
-
-      mapAtoB[i] = kUnassigned_;
-      mapBtoA[j] = kUnassigned_;
-    }
-
-    return false;
   }
 };
 
