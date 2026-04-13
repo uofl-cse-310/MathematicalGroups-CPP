@@ -122,74 +122,148 @@ bool isIsomorphicTo(const GA& A, const GB& B) {
     }
   }
 
-  // Candidates by element order.
+  // Candidates by element order (a necessary condition for isomorphism).
   std::vector<std::vector<std::size_t>> candidates(n);
   for (std::size_t i = 0; i < n; ++i) {
+    candidates[i].reserve(n);
     for (std::size_t j = 0; j < n; ++j) {
       if (ordA[i] == ordB[j]) candidates[i].push_back(j);
     }
     if (candidates[i].empty()) return false;
   }
 
-  // Force identity -> identity.
+  // Identity must map to identity.
   if (std::find(candidates[idA].begin(), candidates[idA].end(), idB) == candidates[idA].end())
     return false;
 
+  // mapAtoB[i] = j, mapBtoA[j] = i
   std::vector<std::size_t> mapAtoB(n, detail::kUnassigned);
   std::vector<std::size_t> mapBtoA(n, detail::kUnassigned);
-  mapAtoB[idA] = idB;
-  mapBtoA[idB] = idA;
 
-  // Variables to assign, ordered by fewest candidates.
-  std::vector<std::size_t> vars;
-  vars.reserve(n - 1);
-  for (std::size_t i = 0; i < n; ++i)
-    if (i != idA) vars.push_back(i);
+  // --- constraint propagation ---
+  struct Assignment {
+    std::size_t a;
+    std::size_t b;
+  };
 
-  std::sort(vars.begin(), vars.end(), [&](std::size_t x, std::size_t y) {
-    return candidates[x].size() < candidates[y].size();
-  });
+  auto pushAssign = [&](std::size_t a, std::size_t b, std::vector<Assignment>& trail) -> bool {
+    // Respect existing assignment and injectivity.
+    if (mapAtoB[a] != detail::kUnassigned) return mapAtoB[a] == b;
+    if (mapBtoA[b] != detail::kUnassigned) return false;
 
-  auto respects = [&](std::size_t i, std::size_t jCand) -> bool {
-    for (std::size_t k = 0; k < n; ++k) {
-      const auto fk = mapAtoB[k];
-      if (fk == detail::kUnassigned) continue;
+    // Respect candidate restriction.
+    if (std::find(candidates[a].begin(), candidates[a].end(), b) == candidates[a].end())
+      return false;
 
-      const auto ip = mulA[i][k];
-      const auto fip = mapAtoB[ip];
-      if (fip != detail::kUnassigned) {
-        if (mulB[jCand][fk] != fip) return false;
-      }
+    mapAtoB[a] = b;
+    mapBtoA[b] = a;
+    trail.push_back(Assignment{a, b});
+    return true;
+  };
 
-      const auto ip2 = mulA[k][i];
-      const auto fip2 = mapAtoB[ip2];
-      if (fip2 != detail::kUnassigned) {
-        if (mulB[fk][jCand] != fip2) return false;
+  auto undoTrail = [&](const std::vector<Assignment>& trail) {
+    for (auto it = trail.rbegin(); it != trail.rend(); ++it) {
+      mapAtoB[it->a] = detail::kUnassigned;
+      mapBtoA[it->b] = detail::kUnassigned;
+    }
+  };
+
+  // Propagate consequences of all current assignments until fixpoint.
+  // For any assigned x,y we require f(x*y)=f(x)*f(y) and f(y*x)=f(y)*f(x).
+  auto propagate = [&](std::vector<Assignment>& trail) -> bool {
+    bool changed = true;
+    while (changed) {
+      changed = false;
+
+      for (std::size_t x = 0; x < n; ++x) {
+        const auto fx = mapAtoB[x];
+        if (fx == detail::kUnassigned) continue;
+
+        for (std::size_t y = 0; y < n; ++y) {
+          const auto fy = mapAtoB[y];
+          if (fy == detail::kUnassigned) continue;
+
+          // z = x*y in A must map to fz = fx*fy in B.
+          {
+            const auto z = mulA[x][y];
+            const auto fz = mulB[fx][fy];
+            const auto before = mapAtoB[z];
+            if (!pushAssign(z, fz, trail)) return false;
+            if (before == detail::kUnassigned) changed = true;
+          }
+
+          // z = y*x in A must map to fz = fy*fx in B.
+          {
+            const auto z = mulA[y][x];
+            const auto fz = mulB[fy][fx];
+            const auto before = mapAtoB[z];
+            if (!pushAssign(z, fz, trail)) return false;
+            if (before == detail::kUnassigned) changed = true;
+          }
+        }
       }
     }
 
     return true;
   };
 
-  std::function<bool(std::size_t)> dfs = [&](std::size_t pos) -> bool {
-    if (pos == vars.size()) return true;
-    const auto i = vars[pos];
+  // Seed identity mapping and propagate.
+  {
+    std::vector<Assignment> trail;
+    if (!pushAssign(idA, idB, trail)) return false;
+    if (!propagate(trail)) return false;
+    // keep trail effects (do not undo)
+  }
 
-    for (const auto j : candidates[i]) {
-      if (mapBtoA[j] != detail::kUnassigned) continue;
-      if (!respects(i, j)) continue;
+  // Choose next unassigned variable with smallest remaining domain.
+  auto pickNextA = [&]() -> std::size_t {
+    std::size_t best = detail::kUnassigned;
+    std::size_t bestCount = std::numeric_limits<std::size_t>::max();
 
-      mapAtoB[i] = j;
-      mapBtoA[j] = i;
-      if (dfs(pos + 1)) return true;
-      mapAtoB[i] = detail::kUnassigned;
-      mapBtoA[j] = detail::kUnassigned;
+    for (std::size_t a = 0; a < n; ++a) {
+      if (mapAtoB[a] != detail::kUnassigned) continue;
+
+      std::size_t count = 0;
+      for (const auto b : candidates[a]) {
+        if (mapBtoA[b] == detail::kUnassigned) ++count;
+      }
+
+      if (count < bestCount) {
+        best = a;
+        bestCount = count;
+        if (bestCount <= 1) break;
+      }
+    }
+
+    return best;
+  };
+
+  std::function<bool()> dfs = [&]() -> bool {
+    const auto nextA = pickNextA();
+    if (nextA == detail::kUnassigned) return true; // all assigned
+
+    // Try remaining candidates.
+    for (const auto b : candidates[nextA]) {
+      if (mapBtoA[b] != detail::kUnassigned) continue;
+
+      std::vector<Assignment> trail;
+      if (!pushAssign(nextA, b, trail)) {
+        undoTrail(trail);
+        continue;
+      }
+      if (!propagate(trail)) {
+        undoTrail(trail);
+        continue;
+      }
+
+      if (dfs()) return true;
+      undoTrail(trail);
     }
 
     return false;
   };
 
-  return dfs(0);
+  return dfs();
 }
 
 // Cross-type equality for any two group containers.
