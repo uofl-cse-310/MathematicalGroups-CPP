@@ -14,6 +14,7 @@ FetchContent_MakeAvailable(googletest)
 add_executable(MathematicalGroupsTests
   MathGroupTests.cpp
   DirectSumTests.cpp
+  IsomorphismDirectSumRegressionTests.cpp
 )
 
 target_link_libraries(MathematicalGroupsTests
